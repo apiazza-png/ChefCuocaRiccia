@@ -26,12 +26,13 @@
     var menu = document.createElement('div');
     menu.className = 'dropdown-menu';
 
+    var root = isLanding ? '' : '../';
     var projects = [
-      { name: 'Uova Strapazzate', path: '../RICETTA UOVA STRAPAZZATE/codebase/index.html' },
-      { name: 'Generazione di Pattern', path: '../PATTERNEXERCISE/index.html' },
-      { name: 'Tipografia Cinetica', path: '../TIPOGRAFIACINETICA/index.html' },
-      { name: 'Maschera Sonora', path: '../MASCHERASONORA/index.html' },
-      { name: 'Manionette', path: '../MANIONETTE/index.html' }
+      { name: 'Uova Strapazzate', path: root + 'RICETTA UOVA STRAPAZZATE/codebase/index.html' },
+      { name: 'Generazione di Pattern', path: root + 'PATTERNEXERCISE/index.html' },
+      { name: 'Tipografia Cinetica', path: root + 'TIPOGRAFIACINETICA/index.html' },
+      { name: 'Maschera Sonora', path: root + 'MASCHERASONORA/index.html' },
+      { name: 'Manionette', path: root + 'MANIONETTE/index.html' }
     ];
 
     projects.forEach(function(p) {
