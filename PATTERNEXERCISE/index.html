@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wavy Pattern Tool</title>
+<link rel="stylesheet" href="../css/style.css">
+<style>
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+html, body {
+  height: 100%;
+  font-family: system-ui, -apple-system, sans-serif;
+  background: #fff;
+}
+body {
+  display: flex;
+}
+#canvas-area {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  overflow: hidden;
+}
+#canvas-area svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: #fff;
+}
+#sidebar {
+  width: 320px;
+  min-width: 320px;
+  height: 100vh;
+  overflow-y: auto;
+  border-left: 1px solid #e0e0e0;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+#sidebar h2 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+#sidebar h3 {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  color: #555;
+}
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.control-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.control-row label {
+  font-size: 12px;
+  color: #666;
+  display: flex;
+  justify-content: space-between;
+}
+.control-row input[type="range"] {
+  width: 100%;
+  cursor: pointer;
+}
+.control-row input[type="color"] {
+  width: 100%;
+  height: 32px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 0;
+}
+.columns {
+  display: flex;
+  gap: 16px;
+}
+.columns > div {
+  flex: 1;
+}
+.btn-group {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+.btn-group button {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  font-weight: 500;
+}
+.btn-svg {
+  background: #4a90d9;
+  color: #fff;
+}
+.btn-svg:hover {
+  background: #357abd;
+}
+.btn-png {
+  background: #34a853;
+  color: #fff;
+}
+.btn-png:hover {
+  background: #2d8f47;
+}
+.value-label {
+  font-variant-numeric: tabular-nums;
+}
+</style>
+</head>
+<body>
+<div id="canvas-area">
+  <svg id="pattern-svg" xmlns="http://www.w3.org/2000/svg">
+  </svg>
+</div>
+<div id="sidebar">
+  <div>
+    <h2>Wavy Pattern Controls</h2>
+  </div>
+  <div class="columns">
+    <div>
+      <h3>Vertical</h3>
+      <div class="control-group" id="vert-controls"></div>
+    </div>
+    <div>
+      <h3>Horizontal</h3>
+      <div class="control-group" id="horiz-controls"></div>
+    </div>
+  </div>
+  <div class="btn-group">
+    <button class="btn-svg" id="export-svg">Export SVG</button>
+    <button class="btn-png" id="export-png">Export PNG</button>
+  </div>
+</div>
+<script>
+const DEFAULT_VALS = {
+  vert: {
+    spacing: 60,
+    amplitude: 20,
+    frequency: 3,
+    thickness: 2,
+    color: '#000000'
+  },
+  horiz: {
+    spacing: 60,
+    amplitude: 20,
+    frequency: 3,
+    thickness: 2,
+    color: '#000000',
+    rotation: 0
+  }
+};
+
+const svg = document.getElementById('pattern-svg');
+
+const state = {
+  vert: { ...DEFAULT_VALS.vert },
+  horiz: { ...DEFAULT_VALS.horiz }
+};
+
+const SLIDER_CONFIGS = [
+  { key: 'spacing', label: 'Spacing', min: 10, max: 200, step: 1 },
+  { key: 'amplitude', label: 'Amplitude', min: 0, max: 100, step: 1 },
+  { key: 'frequency', label: 'Frequency', min: 0.5, max: 10, step: 0.5 },
+  { key: 'thickness', label: 'Thickness', min: 0.5, max: 20, step: 0.5 },
+];
+
+function createRow(id, label, type, min, max, step, value, onChange) {
+  const row = document.createElement('div');
+  row.className = 'control-row';
+  const labelEl = document.createElement('label');
+  labelEl.htmlFor = id;
+  const valueSpan = document.createElement('span');
+  valueSpan.className = 'value-label';
+  valueSpan.textContent = value;
+  labelEl.append(label, valueSpan);
+  row.appendChild(labelEl);
+  const input = document.createElement('input');
+  input.type = type;
+  input.id = id;
+  if (type === 'range') {
+    input.min = min; input.max = max; input.step = step;
+  }
+  input.value = value;
+  input.addEventListener('input', () => {
+    const v = type === 'color' ? input.value : parseFloat(input.value);
+    if (type !== 'color') valueSpan.textContent = v;
+    onChange(v);
+  });
+  row.appendChild(input);
+  return row;
+}
+
+function buildControls() {
+  ['vert', 'horiz'].forEach(side => {
+    const container = document.getElementById(`${side}-controls`);
+    SLIDER_CONFIGS.forEach(cfg => {
+      const row = createRow(
+        `${side}-${cfg.key}`,
+        cfg.label, 'range',
+        cfg.min, cfg.max, cfg.step,
+        state[side][cfg.key],
+        (v) => {
+          state[side][cfg.key] = v;
+          renderGrid();
+        }
+      );
+      container.appendChild(row);
+    });
+    const colorRow = createRow(
+      `${side}-color`,
+      'Color', 'color', null, null, null,
+      state[side].color,
+      (v) => {
+        state[side].color = v;
+        renderGrid();
+      }
+    );
+    container.appendChild(colorRow);
+
+    if (side === 'horiz') {
+      const rotRow = createRow(
+        'horiz-rotation',
+        'Rotation', 'range', 0, 360, 1,
+        state.horiz.rotation,
+        (v) => {
+          state.horiz.rotation = v;
+          renderGrid();
+        }
+      );
+      container.appendChild(rotRow);
+    }
+  });
+}
+
+function sineWavePath(offset, length, amplitude, frequency, isVertical, startOffset) {
+  const periods = frequency;
+  const totalAngle = periods * 2 * Math.PI;
+  const steps = Math.max(2, Math.round(periods * 40));
+  const angleStep = totalAngle / steps;
+  const points = [];
+
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    const pos = t * length;
+    const angle = i * angleStep;
+    const wave = Math.sin(angle) * amplitude;
+
+    if (isVertical) {
+      points.push(`${offset + wave},${pos}`);
+    } else {
+      points.push(`${(startOffset || 0) + pos},${offset + wave}`);
+    }
+  }
+  return `M ${points.join(' L ')}`;
+}
+
+function renderGrid() {
+  const w = svg.clientWidth || 800;
+  const h = svg.clientHeight || 600;
+  svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+
+  let html = '';
+
+  for (let x = state.vert.spacing / 2; x < w; x += state.vert.spacing) {
+    const d = sineWavePath(x, h, state.vert.amplitude, state.vert.frequency, true);
+    html += `<path d="${d}" stroke="${state.vert.color}" stroke-width="${state.vert.thickness}" fill="none" />`;
+  }
+
+  const angle = state.horiz.rotation;
+  if (angle !== 0) {
+    const diag = Math.sqrt(w * w + h * h);
+    const cx = w / 2;
+    const cy = h / 2;
+    const startX = cx - diag / 2;
+    html += `<g transform="rotate(${angle}, ${cx}, ${cy})">`;
+    for (let y = state.horiz.spacing / 2; y < h; y += state.horiz.spacing) {
+      const d = sineWavePath(y, diag, state.horiz.amplitude, state.horiz.frequency, false, startX);
+      html += `<path d="${d}" stroke="${state.horiz.color}" stroke-width="${state.horiz.thickness}" fill="none" />`;
+    }
+    html += `</g>`;
+  } else {
+    for (let y = state.horiz.spacing / 2; y < h; y += state.horiz.spacing) {
+      const d = sineWavePath(y, w, state.horiz.amplitude, state.horiz.frequency, false);
+      html += `<path d="${d}" stroke="${state.horiz.color}" stroke-width="${state.horiz.thickness}" fill="none" />`;
+    }
+  }
+
+  svg.innerHTML = html;
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+document.getElementById('export-svg').addEventListener('click', () => {
+  const serializer = new XMLSerializer();
+  const svgClone = svg.cloneNode(true);
+  svgClone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+  const svgContent = serializer.serializeToString(svgClone);
+  const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+  downloadBlob(blob, 'pattern.svg');
+});
+
+document.getElementById('export-png').addEventListener('click', () => {
+  const serializer = new XMLSerializer();
+  const svgClone = svg.cloneNode(true);
+  svgClone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+  const svgContent = serializer.serializeToString(svgClone);
+
+  const canvas = document.createElement('canvas');
+  const w = svg.clientWidth || 800;
+  const h = svg.clientHeight || 600;
+  canvas.width = w;
+  canvas.height = h;
+
+  const ctx = canvas.getContext('2d');
+  const img = new Image();
+  const blob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  img.onload = () => {
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, w, h);
+    ctx.drawImage(img, 0, 0);
+    URL.revokeObjectURL(url);
+    canvas.toBlob(pngBlob => {
+      downloadBlob(pngBlob, 'pattern.png');
+    });
+  };
+  img.src = url;
+});
+
+buildControls();
+renderGrid();
+
+let resizeTimeout;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimeout);
+  resizeTimeout = setTimeout(renderGrid, 100);
+});
+</script>
+<script src="../js/header.js"></script>
+</body>
+</html>
