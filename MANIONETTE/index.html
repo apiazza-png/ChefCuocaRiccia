@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hand Cycloid Tool</title>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/hand-pose-detection"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; overflow: hidden; background: #1a1a2e; color: #eee; font-family: system-ui, sans-serif; }
+  #container { display: flex; flex-direction: column; height: 100%; }
+  #canvas-wrap { flex: 1; position: relative; min-height: 0; }
+  #canvas-wrap canvas { display: block; width: 100%; height: 100%; background: #16213e; }
+  #controls { padding: 8px 16px; background: #0f3460; display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+  #controls label { display: flex; align-items: center; gap: 6px; font-size: 13px; white-space: nowrap; }
+  #controls input[type="range"] { width: 100px; accent-color: #e94560; }
+  #controls .val { min-width: 36px; text-align: center; font-size: 13px; font-variant-numeric: tabular-nums; }
+  #status { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #556; font-size: 20px; pointer-events: none; }
+</style>
+</head>
+<body>
+<div id="container">
+  <div id="canvas-wrap">
+    <canvas id="canvas"></canvas>
+    <div id="status">Loading hand model...</div>
+  </div>
+  <div id="controls">
+    <label>Loop Size <input type="range" id="sl-loop-size" min="5" max="200" value="50" step="5"><span class="val" id="val-loop-size">0.50</span></label>
+    <label>Loops <input type="range" id="sl-loops" min="1" max="10" value="3"><span class="val" id="val-loops">3</span></label>
+    <label>Dist <input type="range" id="sl-dist" min="0" max="200" value="100"><span class="val" id="val-dist">100%</span></label>
+  </div>
+</div>
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const statusEl = document.getElementById('status');
+
+function resizeCanvas() {
+  const wrap = document.getElementById('canvas-wrap');
+  canvas.width = wrap.clientWidth;
+  canvas.height = wrap.clientHeight;
+}
+
+function computeCycloid(radius, numLoops, numPoints, tracingDist) {
+  const points = [];
+  const totalT = 2 * Math.PI * numLoops;
+  for (let i = 0; i <= numPoints; i++) {
+    const t = (i / numPoints) * totalT;
+    points.push({
+      x: radius * t - tracingDist * Math.sin(t),
+      y: radius - tracingDist * Math.cos(t),
+    });
+  }
+  return points;
+}
+
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+const slLoopSize = document.getElementById('sl-loop-size');
+const valLoopSize = document.getElementById('val-loop-size');
+const slLoops = document.getElementById('sl-loops');
+const valLoops = document.getElementById('val-loops');
+const slDist = document.getElementById('sl-dist');
+const valDist = document.getElementById('val-dist');
+
+function getGlobalParams() {
+  return {
+    loopSize: parseInt(slLoopSize.value) / 100,
+    loops: parseInt(slLoops.value),
+    dist: parseInt(slDist.value),
+  };
+}
+
+slLoopSize.addEventListener('input', () => {
+  valLoopSize.textContent = (parseInt(slLoopSize.value) / 100).toFixed(2);
+});
+slLoops.addEventListener('input', () => { valLoops.textContent = slLoops.value; });
+slDist.addEventListener('input', () => { valDist.textContent = slDist.value + '%'; });
+
+const FINGERS = [
+  { base: 1, tip: 4, dir: 2, color: '#f9c74f' },
+  { base: 5, tip: 8, dir: 6, color: '#f94144' },
+  { base: 9, tip: 12, dir: 10, color: '#43aa8b' },
+  { base: 13, tip: 16, dir: 14, color: '#577590' },
+  { base: 17, tip: 20, dir: 18, color: '#9b5de5' },
+];
+
+const TIP_INDICES = [4, 8, 12, 16, 20];
+
+let detector = null;
+let lastHands = [];
+let videoEl = null;
+
+function getCanvasTransform() {
+  const vw = videoEl ? videoEl.videoWidth : 640;
+  const vh = videoEl ? videoEl.videoHeight : 480;
+  const s = Math.min(canvas.width / vw, canvas.height / vh);
+  return {
+    vw, vh, scale: s,
+    offX: (canvas.width - vw * s) / 2,
+    offY: (canvas.height - vh * s) / 2,
+  };
+}
+
+function toCanvas(tr, x, y) {
+  return {
+    x: (tr.vw - x) * tr.scale + tr.offX,
+    y: y * tr.scale + tr.offY,
+  };
+}
+
+// Fingertip energy effect
+let prevTips = {};
+let particles = [];
+const ARC_THRESHOLD = 150;
+const MAX_PARTICLES = 500;
+
+class Particle {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    const angle = Math.random() * 2 * Math.PI;
+    const speed = 0.5 + Math.random() * 2.5;
+    this.vx = Math.cos(angle) * speed;
+    this.vy = Math.sin(angle) * speed;
+    this.life = 1;
+    this.decay = 0.025 + Math.random() * 0.035;
+    this.size = 1 + Math.random() * 2.5;
+  }
+
+  update() {
+    this.x += this.vx;
+    this.y += this.vy;
+    this.vx *= 0.97;
+    this.vy *= 0.97;
+    this.life -= this.decay;
+  }
+}
+
+function emitBurst(x, y, count) {
+  for (let i = 0; i < count; i++) {
+    if (particles.length >= MAX_PARTICLES) return;
+    particles.push(new Particle(x, y));
+  }
+}
+
+function updateParticles() {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    particles[i].update();
+    if (particles[i].life <= 0) particles.splice(i, 1);
+  }
+}
+
+function drawParticles() {
+  for (const p of particles) {
+    if (p.life <= 0) continue;
+    ctx.globalAlpha = p.life;
+    ctx.shadowBlur = p.size * 8;
+    ctx.shadowColor = '#fff';
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  ctx.shadowBlur = 0;
+}
+
+function drawArc(x1, y1, x2, y2, intensity, seed) {
+  if (intensity <= 0.01) return;
+
+  const t = Date.now() / 250;
+  const mx = (x1 + x2) / 2;
+  const my = (y1 + y2) / 2;
+  const osc = 15 + intensity * 35;
+  const cx = mx + Math.sin(t * 2.1 + seed) * osc * (0.3 + intensity * 0.7);
+  const cy = my + Math.cos(t * 1.7 + seed * 1.3) * osc * (0.3 + intensity * 0.7);
+
+  const alpha = Math.min(1, intensity * 1.2);
+  ctx.globalAlpha = alpha;
+  ctx.shadowBlur = intensity * 25;
+  ctx.shadowColor = '#fff';
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 0.5 + intensity * 3;
+
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.quadraticCurveTo(cx, cy, x2, y2);
+  ctx.stroke();
+
+  ctx.shadowBlur = 0;
+  ctx.globalAlpha = 1;
+}
+
+async function initHandDetection() {
+  try {
+    const model = handPoseDetection.SupportedModels.MediaPipeHands;
+    detector = await handPoseDetection.createDetector(model, {
+      runtime: 'mediapipe',
+      modelType: 'full',
+      maxHands: 2,
+      solutionPath: 'https://cdn.jsdelivr.net/npm/@mediapipe/hands',
+    });
+    statusEl.textContent = 'Show your hand to the camera';
+    startWebcam();
+  } catch (err) {
+    statusEl.textContent = 'Failed to load hand model: ' + err.message;
+    console.error(err);
+  }
+}
+
+initHandDetection();
+
+async function startWebcam() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+    const video = document.createElement('video');
+    video.srcObject = stream;
+    video.setAttribute('playsinline', '');
+    video.play();
+    videoEl = video;
+    detectLoop(video);
+  } catch (err) {
+    statusEl.textContent = 'Camera access denied: ' + err.message;
+  }
+}
+
+async function detectLoop(video) {
+  if (video.readyState < 2) { requestAnimationFrame(() => detectLoop(video)); return; }
+  try {
+    const hands = await detector.estimateHands(video);
+    if (hands.length > 0) {
+      lastHands = hands;
+      statusEl.style.display = 'none';
+    } else {
+      lastHands = [];
+      statusEl.style.display = '';
+      statusEl.textContent = 'Show your hand to the camera';
+    }
+  } catch (err) {
+    // detection error on some frames is normal
+  }
+  requestAnimationFrame(() => detectLoop(video));
+}
+
+function renderCurves() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const params = getGlobalParams();
+  const tr = getCanvasTransform();
+
+  // Collect canvas-space fingertip positions per hand
+  const handFingertips = [];
+
+  // First pass: draw cycloids and collect tip positions
+  for (const hand of lastHands) {
+    const kp = hand.keypoints;
+    const tips = [];
+
+    for (const f of FINGERS) {
+      const base = kp[f.base];
+      const tip = kp[f.tip];
+      const dir = kp[f.dir];
+      if (!base || !tip || !dir) { tips.push(null); continue; }
+
+      const baseC = toCanvas(tr, base.x, base.y);
+      const tipC = toCanvas(tr, tip.x, tip.y);
+      const dirC = toCanvas(tr, dir.x, dir.y);
+
+      tips.push(tipC);
+
+      const dx = dirC.x - baseC.x;
+      const dy = dirC.y - baseC.y;
+      const fingerLen = Math.hypot(tipC.x - baseC.x, tipC.y - baseC.y);
+      if (fingerLen < 1) continue;
+
+      const angle = Math.atan2(dy, dx);
+      const r = fingerLen * params.loopSize;
+      const d = r * (params.dist / 100);
+      const numPts = params.loops * 150;
+      const raw = computeCycloid(r, params.loops, numPts, d);
+
+      const cosA = Math.cos(angle);
+      const sinA = Math.sin(angle);
+
+      ctx.beginPath();
+      for (let i = 0; i < raw.length; i++) {
+        const x = baseC.x + raw[i].x * cosA - raw[i].y * sinA;
+        const y = baseC.y + raw[i].x * sinA + raw[i].y * cosA;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.strokeStyle = f.color;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
+    handFingertips.push(tips);
+  }
+
+  // Second pass: fingertip energy arcs
+  for (let h = 0; h < handFingertips.length; h++) {
+    const tips = handFingertips[h];
+    const handKey = lastHands[h].handedness || 'hand_' + h;
+
+    // Compute all tip speeds first (before drawing) to avoid stale prevTips
+    const tipData = [];
+    for (let i = 0; i < tips.length; i++) {
+      if (!tips[i]) { tipData.push(null); continue; }
+      const key = handKey + '_' + TIP_INDICES[i];
+      let speed = 0;
+      if (prevTips[key]) {
+        speed = Math.hypot(tips[i].x - prevTips[key].x, tips[i].y - prevTips[key].y);
+      }
+      prevTips[key] = { x: tips[i].x, y: tips[i].y };
+      tipData.push({ x: tips[i].x, y: tips[i].y, speed });
+    }
+
+    // Only thumb (0) ↔ index (1) fingertip arc
+    const td0 = tipData[0];
+    const td1 = tipData[1];
+    if (td0 && td1) {
+      const dist = Math.hypot(td1.x - td0.x, td1.y - td0.y);
+      if (dist < ARC_THRESHOLD) {
+        const proximity = 1 - dist / ARC_THRESHOLD;
+        const avgSpeed = (td0.speed + td1.speed) / 2;
+        const speedFactor = Math.min(avgSpeed / 15, 1);
+        const intensity = Math.min(proximity + speedFactor * 0.4, 1);
+
+        const seed = h * 199.7;
+        drawArc(td0.x, td0.y, td1.x, td1.y, intensity, seed);
+
+        const mx = (td0.x + td1.x) / 2;
+        const my = (td0.y + td1.y) / 2;
+        const burstCount = Math.floor(intensity * 3);
+        if (burstCount > 0) emitBurst(mx, my, burstCount);
+      }
+    }
+  }
+
+  // Update and draw particles
+  updateParticles();
+  drawParticles();
+}
+
+function animationLoop() {
+  renderCurves();
+  requestAnimationFrame(animationLoop);
+}
+animationLoop();
+</script>
+</body>
+</html>

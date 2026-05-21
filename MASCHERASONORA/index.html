@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MASCHERASONORA — Morphing SVG</title>
+<link rel="stylesheet" href="../css/style.css">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #ffffff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  font-family: system-ui, sans-serif;
+}
+.container { position: relative; }
+svg { display: block; width: 90vmin; height: auto; }
+.controls {
+  position: absolute;
+  bottom: 30px; left: 50%;
+  transform: translateX(-50%);
+  display: flex; gap: 12px; align-items: center;
+  flex-wrap: wrap; justify-content: center;
+}
+#startBtn {
+  padding: 12px 24px;
+  border: none; border-radius: 8px;
+  background: #b8355e; color: white;
+  font-size: 16px; cursor: pointer;
+}
+#startBtn:hover { background: #931c4d; }
+#startBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+#levelSlider { width: 200px; accent-color: #b8355e; }
+#levelLabel { color: #333; font-size: 14px; min-width: 100px; text-align: center; }
+#fallbackMsg { color: #b8355e; font-size: 14px; text-align: center; margin-top: 8px; }
+</style>
+</head>
+<body>
+<div class="container">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 595.3 841.9">
+  <defs>
+    <style>
+      .st0 { fill: #0a6d4e; }
+      .st1 { fill: #ffffff; }
+      .st2 { fill: #b8355e; }
+      .st3 { fill: #312783; }
+      .st4 { fill: #1d1d1b; }
+      .st5 { fill: #931c4d; }
+      .st6 { fill: #936037; }
+    </style>
+  </defs>
+
+  <g id="OCCHIO">
+    <g>
+      <path id="pathOcchio1" class="st6"
+            data-quiete="M369.2,323.1c-.7,0-1.3-.3-1.7-.9-5.8-9.1-31.4-7.2-40.7-5.7-4.3.5-50.7,5.6-51.2,5.6-1.1.1-2.1-.7-2.2-1.8-.1-1.1.7-2.1,1.8-2.2.5,0,46.8-5.1,51-5.6,1.4-.2,36.2-5.7,44.6,7.5.6.9.3,2.2-.6,2.8-.3.2-.7.3-1.1.3Z"
+            data-rumore="M274.1,335.8c-.8,0-1.5-.4-1.8-1.2-.5-1,0-2.2,1-2.7,1.5-.7,35.9-16.8,54.3-19.6,1.5-.2,36.3-5.7,44.7,7.5.6.9.3,2.2-.6,2.8-.9.6-2.2.3-2.8-.6-5.8-9.1-31.4-7.2-40.7-5.7-17.9,2.7-52.9,19.1-53.2,19.2-.3.1-.6.2-.8.2Z"
+            d="M369.2,323.1c-.7,0-1.3-.3-1.7-.9-5.8-9.1-31.4-7.2-40.7-5.7-4.3.5-50.7,5.6-51.2,5.6-1.1.1-2.1-.7-2.2-1.8-.1-1.1.7-2.1,1.8-2.2.5,0,46.8-5.1,51-5.6,1.4-.2,36.2-5.7,44.6,7.5.6.9.3,2.2-.6,2.8-.3.2-.7.3-1.1.3Z"/>
+      <path id="eyeWhite" class="st1"
+            data-quiete="M366.7,360.4c-3.7,4.1-17.7,17.1-43.3,17.1s-39.2-13.1-42.7-17.1c3.5-4.1,17.2-.1,43-.1s39.3-4,43,.1Z"
+            data-rumore="M366.7,360.4c-3.7,4.1-17.7,17.1-43.3,17.1s-39.2-13.1-42.7-17.1c3.5-4.1,16.9-17.4,42.7-17.4s39.6,13.3,43.3,17.4Z"
+            d="M366.7,360.4c-3.7,4.1-17.7,17.1-43.3,17.1s-39.2-13.1-42.7-17.1c3.5-4.1,17.2-.1,43-.1s39.3-4,43,.1Z"/>
+      <path id="pathOcchio2" class="st6"
+            data-quiete="M370.9,359.2c-.6-.8-15-3-47.2-3s-46.7,2.2-47.2,3l-.8,1.2.8,1.2c.6.8,14.6,19.9,46.9,19.9s47-19.1,47.6-19.9l.9-1.2-.9-1.2Z"
+            data-rumore="M370.9,359.2c-.6-.8-15.3-20.2-47.6-20.2s-46.3,19.4-46.9,20.2l-.8,1.2.8,1.2c.6.8,14.6,19.9,46.9,19.9s47-19.1,47.6-19.9l.9-1.2-.9-1.2Z"
+            d="M370.9,359.2c-.6-.8-15-3-47.2-3s-46.7,2.2-47.2,3l-.8,1.2.8,1.2c.6.8,14.6,19.9,46.9,19.9s47-19.1,47.6-19.9l.9-1.2-.9-1.2Z"/>
+      <path id="eyeWhiteBottom" class="st1"
+            data-quiete="M323.3,377.5c-25.7,0-39.2-13.1-42.7-17.1,6.6.2,17.2-.1,43-.1s38.3-1.1,43,.1c-3.7,4.1-17.7,17.1-43.3,17.1Z"
+            data-rumore="M323.3,377.5c-25.7,0-39.2-13.1-42.7-17.1,3.5-4.1,16.9-17.4,42.7-17.4s39.6,13.3,43.3,17.4c-3.7,4.1-17.7,17.1-43.3,17.1Z"
+            d="M323.3,377.5c-25.7,0-39.2-13.1-42.7-17.1,6.6.2,17.2-.1,43-.1s38.3-1.1,43,.1c-3.7,4.1-17.7,17.1-43.3,17.1Z"/>
+      <ellipse id="iride" class="st0" cx="323.7" cy="379" rx="18.7" ry="0"/>
+      <ellipse id="pupilla" class="st4" cx="323.7" cy="370.9" rx="10.6" ry="0"/>
+    </g>
+  </g>
+  </g>
+
+  <g id="CAPELLI">
+    <path id="pathCapelli" class="st3"
+          data-quiete="M522.6,425.6c0-8.6-4.4-16.4-11.5-22,11-5.3,18.4-15.1,18.4-26.3s-8.2-22.1-20.3-27.2c9.9-5.9,16.5-15.8,16.5-27.1s-10-25.9-24.1-30.6c3.6-5.5,5.8-12,5.8-19,0-16.9-12.4-31.1-29.1-34.7.5-2.6.7-5.4.7-8.2,0-22.6-16.8-41-37.4-41s-2.6,0-3.9.2c-3.5-18.7-18.6-32.8-36.7-32.8s-18.7,4.1-25.4,10.9c-5.2-14-16.6-23.7-29.8-23.7s-18.5,5.3-24.5,13.7c-7.7-5.2-16.9-8.2-26.9-8.2-25.6,0-46.6,20-48.2,45.3,0,0,0,0,0,0-7.2-3.5-15.5-5.4-24.2-5.4-29,0-52.5,21.6-52.5,48.2s.4,6.5,1,9.6c-3.3-.8-6.7-1.2-10.2-1.2-23.3,0-42.1,17.8-42.1,39.8s1,10.1,2.9,14.6c-2.7-.5-5.4-.8-8.3-.8-23.3,0-42.1,17.8-42.1,39.8s5.8,23.1,14.9,30.4c-12.1,8.8-19.9,22.5-19.9,37.8s9.3,31.5,23.4,40.2c.9,18.3,13,33.5,29,37.6,0,.4,0,.7,0,1.1,0,22.6,16,41,35.6,41s17.6-4,23.9-10.6c5.6,10.2,14.6,16.8,24.7,16.8s18.3-6,24-15.4c2.5,1.1,5.1,1.6,7.8,1.6,9.5,0,17.9-7,23-17.7,14.7-1.2,26.4-19,26.4-40.9s-12.5-41-28-41-18,7-23,17.7c-3,.2-5.9,1.2-8.6,2.8,2.4-4.7,3.7-9.9,3.7-15.4,0-18.9-15.7-34.5-36.2-37.1,12.8-6.5,21.4-18.7,21.4-32.7s-8.3-25.7-20.7-32.3c22-1.3,39.4-17.6,39.4-37.4s0-.5,0-.8c19.1-3.3,34.5-16.1,40.3-32.8,0,0,0,0,0,0,5.5,5.5,12.2,8.7,19.4,8.7s11.4-2.2,16.3-6c5.8,18.7,21.5,32,39.8,32s9.8-1,14.2-2.8c7.1,6.3,16.1,10.1,25.8,10.1s1.9,0,2.8-.1c1.8,24,18.9,43,40.1,44.1-4.3,7.5-6.8,16.5-6.8,26.2s1.6,15.1,4.5,21.6c-14.2,6-24,18.9-24,33.9s.3,4.7.7,7c-6-4.2-13.2-6.6-21-6.6-21,0-38.1,18-38.1,40.1s17.1,40.1,38.1,40.1,5.4-.3,8-.9c5.2,15.7,19.3,27,36,27s21.1-5,28.1-13c3.8.8,7.8,1.2,11.9,1.2,26.8,0,48.6-18,48.6-40.1s-3.7-17.5-9.9-24.3c9.8-5.5,16.1-14.7,16.1-25.1Z"
+          data-rumore="M552.1,429.8c0-8.6-34.7-20.7-41.8-26.3,11-5.3,60.2-12.9,60.2-24.1s-50.1-24.2-62.1-29.3c9.9-5.9,39.6-13.2,39.6-24.5s-33.2-28.6-47.3-33.3c3.6-5.5,5.8-12,5.8-19,0-16.9,31.7-53.4,15-57,.5-2.6-43.3,16.9-43.3,14.1,0-22.6-16.8-41-37.4-41s-2.6,0-3.9.2c-3.5-18.7,3.7-66.3-14.4-66.3s-41,37.7-47.7,44.4c-5.2-14-16.6-23.7-29.8-23.7s-18.7-61.8-24.7-53.4c-7.7-5.2-16.8,59-26.7,59-25.6,0-102.4-46.4-104-21.2,0,0,55.8,66.4,55.8,66.4-7.2-3.5-52.2-36.8-60.9-36.8-29,0-15.8,53-15.8,79.6s.4,6.5,1,9.6c-3.3-.8-21.2-76-24.7-76-23.3,0-27.6,92.6-27.6,114.6s1,10.1,2.9,14.6c-2.7-.5-28-69.9-30.8-69.9-23.3,0-19.6,87-19.6,109s5.8,23.1,14.9,30.4c-12.1,8.8-52.5,22-52.5,37.3s41.9,32,56,40.7c.9,18.3-18,51.2-1.9,55.3,0,.4,31-17,31-16.6,0,22.6,16,41,35.6,41s17.6-4,23.9-10.6c5.6,10.2,14.6,16.8,24.7,16.8s18.3-6,24-15.4c2.5,1.1,5.1,1.6,7.8,1.6,9.5,0,17.9-7,23-17.7,14.7-1.2,26.4-19,26.4-40.9s-12.5-41-28-41-18,7-23,17.7c-3,.2-5.9,1.2-8.6,2.8,2.4-4.7,3.7-9.9,3.7-15.4,0-18.9-15.7-34.5-36.2-37.1,12.8-6.5,21.4-18.7,21.4-32.7s-8.3-25.7-20.7-32.3c22-1.3,39.4-17.6,39.4-37.4s0-.5,0-.8c19.1-3.3,34.5-16.1,40.3-32.8,0,0,0,0,0,0,5.5,5.5,12.2,8.7,19.4,8.7s11.4-2.2,16.3-6c5.8,18.7,21.5,32,39.8,32s9.8-1,14.2-2.8c7.1,6.3,16.1,10.1,25.8,10.1s1.9,0,2.8-.1c1.8,24,18.9,43,40.1,44.1-4.3,7.5-6.8,16.5-6.8,26.2s1.6,15.1,4.5,21.6c-14.2,6-24,18.9-24,33.9s.3,4.7.7,7c-6-4.2-13.2-6.6-21-6.6-21,0-38.1,18-38.1,40.1s17.1,40.1,38.1,40.1,5.4-.3,8-.9c5.2,15.7,19.3,27,36,27s21.1-5,28.1-13c3.8.8,7.8,1.2,11.9,1.2,26.8,0,77-20.2,77-42.4s-32.1-15.3-38.3-22c9.8-5.5,46.5-10.4,46.5-20.8Z"
+          d="M522.6,425.6c0-8.6-4.4-16.4-11.5-22,11-5.3,18.4-15.1,18.4-26.3s-8.2-22.1-20.3-27.2c9.9-5.9,16.5-15.8,16.5-27.1s-10-25.9-24.1-30.6c3.6-5.5,5.8-12,5.8-19,0-16.9-12.4-31.1-29.1-34.7.5-2.6.7-5.4.7-8.2,0-22.6-16.8-41-37.4-41s-2.6,0-3.9.2c-3.5-18.7-18.6-32.8-36.7-32.8s-18.7,4.1-25.4,10.9c-5.2-14-16.6-23.7-29.8-23.7s-18.5,5.3-24.5,13.7c-7.7-5.2-16.9-8.2-26.9-8.2-25.6,0-46.6,20-48.2,45.3,0,0,0,0,0,0-7.2-3.5-15.5-5.4-24.2-5.4-29,0-52.5,21.6-52.5,48.2s.4,6.5,1,9.6c-3.3-.8-6.7-1.2-10.2-1.2-23.3,0-42.1,17.8-42.1,39.8s1,10.1,2.9,14.6c-2.7-.5-5.4-.8-8.3-.8-23.3,0-42.1,17.8-42.1,39.8s5.8,23.1,14.9,30.4c-12.1,8.8-19.9,22.5-19.9,37.8s9.3,31.5,23.4,40.2c.9,18.3,13,33.5,29,37.6,0,.4,0,.7,0,1.1,0,22.6,16,41,35.6,41s17.6-4,23.9-10.6c5.6,10.2,14.6,16.8,24.7,16.8s18.3-6,24-15.4c2.5,1.1,5.1,1.6,7.8,1.6,9.5,0,17.9-7,23-17.7,14.7-1.2,26.4-19,26.4-40.9s-12.5-41-28-41-18,7-23,17.7c-3,.2-5.9,1.2-8.6,2.8,2.4-4.7,3.7-9.9,3.7-15.4,0-18.9-15.7-34.5-36.2-37.1,12.8-6.5,21.4-18.7,21.4-32.7s-8.3-25.7-20.7-32.3c22-1.3,39.4-17.6,39.4-37.4s0-.5,0-.8c19.1-3.3,34.5-16.1,40.3-32.8,0,0,0,0,0,0,5.5,5.5,12.2,8.7,19.4,8.7s11.4-2.2,16.3-6c5.8,18.7,21.5,32,39.8,32s9.8-1,14.2-2.8c7.1,6.3,16.1,10.1,25.8,10.1s1.9,0,2.8-.1c1.8,24,18.9,43,40.1,44.1-4.3,7.5-6.8,16.5-6.8,26.2s1.6,15.1,4.5,21.6c-14.2,6-24,18.9-24,33.9s.3,4.7.7,7c-6-4.2-13.2-6.6-21-6.6-21,0-38.1,18-38.1,40.1s17.1,40.1,38.1,40.1,5.4-.3,8-.9c5.2,15.7,19.3,27,36,27s21.1-5,28.1-13c3.8.8,7.8,1.2,11.9,1.2,26.8,0,48.6-18,48.6-40.1s-3.7-17.5-9.9-24.3c9.8-5.5,16.1-14.7,16.1-25.1Z"/>
+  </g>
+
+  <g id="BOCCA">
+    <g>
+      <path class="st2"
+            d="M138.5,539.3s22.9,3.5,34.8,17.8c1,1.2,2,2.2,3,3.3,7.6,7.8,32.9,32.8,52.9,43.1.7.4,1.4.7,2.1,1.1,5.4,2.9,37.3,19.3,83.7,19.3,46.4,0,78.4-16.4,83.7-19.3s1.4-.7,2.1-1.1c20.1-10.3,45.3-35.3,52.9-43.1,1-1.1,2.1-2.2,3-3.3,11.9-14.3,34.8-17.8,34.8-17.8,0,0-25.9-6.5-67.1-47.8-41.3-41.3-79.2-62.2-109.5-36.6-30.3-25.6-68.2-4.7-109.5,36.6-41.3,41.3-67.1,47.8-67.1,47.8Z"/>
+      <path id="pathBocca2" class="st5"
+            data-quiete="M138.5,539.3h0c1.1-.2,110.4-26,177.7-5.4,65.1-22.2,174.5,5.1,175.6,5.4h0c-1.1-.3-110.9-23.6-174.9-1.4l-.6.2-.6-.2c-66.2-20.7-176.1,1.1-177.1,1.3Z"
+            data-rumore="M138.5,539.3h0c1.1-.2,110.4-66.3,177.7-45.6,65.1-22.2,174.5,45.4,175.6,45.6h0c-1.1-.3-110.9,25.1-174.9,47.3l-.6.2-.6-.2c-66.2-20.7-176.1-47.6-177.1-47.3Z"
+            d="M138.5,539.3h0c1.1-.2,110.4-26,177.7-5.4,65.1-22.2,174.5,5.1,175.6,5.4h0c-1.1-.3-110.9-23.6-174.9-1.4l-.6.2-.6-.2c-66.2-20.7-176.1,1.1-177.1,1.3Z"/>
+    </g>
+  </g>
+</svg>
+
+<div class="controls">
+  <button id="startBtn">🎤 Avvia microfono</button>
+  <input type="range" id="levelSlider" min="0" max="100" value="0" style="display:none">
+  <span id="levelLabel" style="display:none">Livello: 0</span>
+</div>
+<div id="fallbackMsg"></div>
+</div>
+
+<script src="https://unpkg.com/flubber@0.3.0"></script>
+<script>
+class AudioEngine {
+  constructor() {
+    this.audioCtx = null;
+    this.analyser = null;
+    this.dataArray = null;
+    this.smoothedLevel = 0;
+    this.isRunning = false;
+  }
+
+  async start() {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (this.audioCtx.state === 'suspended') await this.audioCtx.resume();
+    const source = this.audioCtx.createMediaStreamSource(stream);
+    this.analyser = this.audioCtx.createAnalyser();
+    this.analyser.fftSize = 1024;
+    source.connect(this.analyser);
+    this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
+    this.isRunning = true;
+  }
+
+  getLevel() {
+    if (!this.isRunning) return 0;
+    this.analyser.getByteTimeDomainData(this.dataArray);
+    let sumSquares = 0;
+    for (let i = 0; i < this.dataArray.length; i++) {
+      const normalized = this.dataArray[i] / 128 - 1;
+      sumSquares += normalized * normalized;
+    }
+    const rms = Math.sqrt(sumSquares / this.dataArray.length);
+    const raw = Math.min(100, Math.max(0, (rms / 0.3) * 100));
+    this.smoothedLevel = this.smoothedLevel * 0.7 + raw * 0.3;
+    return this.smoothedLevel;
+  }
+}
+
+class MorphController {
+  constructor(svgEl) {
+    this.svg = svgEl;
+    this.interpolators = [];
+    this.setupInterpolators();
+  }
+
+  setupInterpolators() {
+    this.interpolators = [];
+    const ids = ['pathCapelli', 'pathOcchio1', 'pathOcchio2', 'eyeWhite', 'eyeWhiteBottom', 'pathBocca2'];
+    for (const id of ids) {
+      const el = this.svg.querySelector('#' + id);
+      const dQuiet = el.getAttribute('data-quiete');
+      const dRumore = el.getAttribute('data-rumore');
+      if (dQuiet && dRumore && dQuiet !== dRumore) {
+        this.interpolators.push({
+          el,
+          morph: flubber.interpolate(dQuiet, dRumore, { maxSegmentLength: 2 }),
+        });
+      }
+    }
+  }
+
+  update(t) {
+    for (const { el, morph } of this.interpolators) {
+      el.setAttribute('d', morph(t));
+    }
+  }
+}
+
+const svgEl = document.querySelector('svg');
+const audioEngine = new AudioEngine();
+const morph = new MorphController(svgEl);
+const startBtn = document.getElementById('startBtn');
+const slider = document.getElementById('levelSlider');
+const levelLabel = document.getElementById('levelLabel');
+const fallbackMsg = document.getElementById('fallbackMsg');
+let useMicrophone = false;
+
+const irideEl = document.getElementById('iride');
+const pupillaEl = document.getElementById('pupilla');
+
+function lerp(a, b, t) { return a + (b - a) * t; }
+
+function animate() {
+  const level = useMicrophone ? audioEngine.getLevel() : parseFloat(slider.value);
+  const t = Math.min(1, Math.max(0, level / 100));
+
+  morph.update(t);
+
+  if (irideEl) {
+    irideEl.setAttribute('ry', t * 18.7);
+    irideEl.setAttribute('cy', lerp(379, 360.2, t));
+  }
+  if (pupillaEl) {
+    pupillaEl.setAttribute('ry', t * 10.6);
+    pupillaEl.setAttribute('cy', lerp(370.9, 360.2, t));
+  }
+
+  levelLabel.textContent = 'Livello: ' + Math.round(level);
+  requestAnimationFrame(animate);
+}
+
+startBtn.addEventListener('click', async () => {
+  try {
+    await audioEngine.start();
+    useMicrophone = true;
+    startBtn.textContent = '✓ Microfono attivo';
+    startBtn.disabled = true;
+    slider.style.display = 'none';
+    levelLabel.style.display = 'block';
+  } catch {
+    fallbackMsg.textContent = 'Microfono non disponibile — usa lo slider';
+    slider.style.display = 'block';
+    levelLabel.style.display = 'block';
+    useMicrophone = false;
+  }
+});
+
+slider.addEventListener('input', () => {
+  if (!useMicrophone) {
+    levelLabel.textContent = 'Livello: ' + Math.round(slider.value);
+  }
+});
+
+animate();
+</script>
+<script src="../js/header.js"></script>
+</body>
+</html>

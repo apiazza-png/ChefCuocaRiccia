@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>choreography</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%; height: 100%;
+      background: #fff;
+      overflow: hidden;
+      font-family: 'Nunito', sans-serif;
+    }
+    canvas {
+      display: block;
+      position: absolute;
+      top: 0; left: 0;
+    }
+    .restart-btn {
+      position: fixed;
+      top: 16px; right: 16px;
+      z-index: 20;
+      background: none;
+      border: 1.5px solid #0000CD;
+      color: #0000CD;
+      font-family: 'Nunito', sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s, color 0.2s;
+      user-select: none;
+    }
+    .restart-btn:hover {
+      background: #0000CD;
+      color: #fff;
+    }
+    .controls {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(8px);
+      padding: 16px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 10;
+      user-select: none;
+    }
+    .control-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .control-row label {
+      width: 100px;
+      font-size: 13px;
+      color: #333;
+      font-weight: 700;
+    }
+    .control-row .value {
+      width: 40px;
+      font-size: 13px;
+      color: #666;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+    .control-row input[type="range"] {
+      flex: 1;
+      accent-color: #0000CD;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  <div class="controls" id="controls"></div>
+  <button class="restart-btn" id="restartBtn">↻</button>
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const text = 'choreography';
+    const textColor = '#0000CD';
+    let W, H;
+    let offscreen, offCtx, imageData;
+    let time = 0;
+    let startTime = null;
+    const holdMs = 1000;
+    const accelMs = 3000;
+    let resizeTimeout;
+
+    const params = {
+      amplitude: 75,
+      frequency: 0.017,
+      speed: 6.7,
+      phase: 3.53,
+      noise: 0,
+      acceleration: 2,
+    };
+
+    const sliderConfigs = [
+      { key: 'amplitude', label: 'Amplitude', min: 0, max: 100, step: 1 },
+      { key: 'frequency', label: 'Frequency', min: 0.001, max: 0.1, step: 0.001 },
+      { key: 'speed',     label: 'Speed',     min: 0,    max: 10,   step: 0.1 },
+      { key: 'phase',     label: 'Phase',     min: 0,    max: 6.28, step: 0.01 },
+      { key: 'noise',       label: 'Noise',       min: 0,    max: 100,  step: 1 },
+      { key: 'acceleration', label: 'Acceleration', min: 1,    max: 10,   step: 0.1 },
+    ];
+
+    function resize() {
+      W = canvas.width = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+      setupOffscreen();
+    }
+
+    function setupOffscreen() {
+      offscreen = document.createElement('canvas');
+      offscreen.width = W;
+      offscreen.height = H;
+      offCtx = offscreen.getContext('2d');
+      offCtx.clearRect(0, 0, W, H);
+      offCtx.fillStyle = textColor;
+      const fontSize = Math.min(W * 0.12, 120);
+      offCtx.font = `800 ${fontSize}px 'Nunito', sans-serif`;
+      offCtx.textAlign = 'center';
+      offCtx.textBaseline = 'middle';
+      offCtx.fillText(text, W / 2, H / 2);
+      imageData = offCtx.getImageData(0, 0, W, H);
+    }
+
+    function gaussianRandom() {
+      let u = 0, v = 0;
+      while (u === 0) u = Math.random();
+      while (v === 0) v = Math.random();
+      return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+    }
+
+    function buildSliders() {
+      const container = document.getElementById('controls');
+      container.innerHTML = '';
+      for (const cfg of sliderConfigs) {
+        const row = document.createElement('div');
+        row.className = 'control-row';
+
+        const label = document.createElement('label');
+        label.textContent = cfg.label;
+
+        const valueSpan = document.createElement('span');
+        valueSpan.className = 'value';
+        valueSpan.textContent = params[cfg.key];
+
+        const input = document.createElement('input');
+        input.type = 'range';
+        input.min = cfg.min;
+        input.max = cfg.max;
+        input.step = cfg.step;
+        input.value = params[cfg.key];
+
+        input.addEventListener('input', () => {
+          params[cfg.key] = parseFloat(input.value);
+          valueSpan.textContent = params[cfg.key];
+        });
+
+        row.appendChild(label);
+        row.appendChild(valueSpan);
+        row.appendChild(input);
+        container.appendChild(row);
+      }
+    }
+
+    function animate(timestamp) {
+      if (startTime === null) startTime = timestamp;
+      const elapsed = timestamp - startTime;
+
+      let ease;
+      if (elapsed < holdMs) {
+        ease = 0;
+        time = 0;
+      } else {
+        const p = Math.min((elapsed - holdMs) / accelMs, 1);
+        ease = Math.pow(p, params.acceleration);
+        time = (elapsed - holdMs) / 1000;
+      }
+
+      const src = imageData.data;
+      const dst = ctx.createImageData(W, H);
+      const d = dst.data;
+
+      for (let x = 0; x < W; x++) {
+        const wave = ease * (params.amplitude * Math.sin(
+          params.frequency * x + params.speed * time + params.phase
+        ) + params.noise * gaussianRandom());
+
+        const offsetY = Math.round(wave);
+        const offsetX = Math.round(wave * 0.5);
+
+        for (let y = 0; y < H; y++) {
+          const srcY = y + offsetY;
+          const srcX = x + offsetX;
+
+          if (srcX < 0 || srcX >= W || srcY < 0 || srcY >= H) continue;
+
+          const si = (srcY * W + srcX) * 4;
+          const di = (y * W + x) * 4;
+          d[di] = src[si];
+          d[di + 1] = src[si + 1];
+          d[di + 2] = src[si + 2];
+          d[di + 3] = src[si + 3];
+        }
+      }
+
+      ctx.putImageData(dst, 0, 0);
+      requestAnimationFrame(animate);
+    }
+
+    document.getElementById('restartBtn').addEventListener('click', () => {
+      startTime = null;
+      time = 0;
+    });
+
+    document.fonts.ready.then(() => {
+      resize();
+      buildSliders();
+      window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(resize, 150);
+      });
+      requestAnimationFrame(animate);
+    });
+  </script>
+<script src="../js/header.js"></script>
+</body>
+</html>

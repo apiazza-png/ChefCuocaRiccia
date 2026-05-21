@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cycloid Drawing Tool</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; overflow: hidden; background: #1a1a2e; color: #eee; font-family: system-ui, sans-serif; }
+  #container { display: flex; flex-direction: column; height: 100%; }
+  #canvas-wrap { flex: 1; position: relative; min-height: 0; }
+  #canvas-wrap canvas { display: block; width: 100%; height: 100%; background: #16213e; cursor: pointer; }
+  #controls { padding: 12px 20px; background: #0f3460; display: flex; gap: 24px; align-items: center; flex-wrap: wrap; }
+  #controls label { display: flex; align-items: center; gap: 8px; font-size: 14px; white-space: nowrap; }
+  #controls input[type="range"] { width: 140px; accent-color: #e94560; }
+  #controls .value { min-width: 32px; text-align: center; font-variant-numeric: tabular-nums; }
+  #pos-readout { margin-left: auto; font-size: 14px; color: #aaa; }
+</style>
+</head>
+<body>
+<div id="container">
+  <div id="canvas-wrap">
+    <canvas id="canvas"></canvas>
+  </div>
+  <div id="controls">
+    <label>Loop Size <input type="range" id="sizeSlider" min="5" max="100" value="40"><span class="value" id="sizeVal">40</span></label>
+    <label>Number of Loops <input type="range" id="loopsSlider" min="1" max="12" value="3"><span class="value" id="loopsVal">3</span></label>
+    <label>Tracing Distance <input type="range" id="distSlider" min="0" max="200" value="100"><span class="value" id="distVal">100</span></label>
+    <span id="pos-readout">Drag the dot along the curve</span>
+  </div>
+</div>
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const sizeSlider = document.getElementById('sizeSlider');
+const loopsSlider = document.getElementById('loopsSlider');
+const sizeVal = document.getElementById('sizeVal');
+const loopsVal = document.getElementById('loopsVal');
+const posReadout = document.getElementById('pos-readout');
+const distSlider = document.getElementById('distSlider');
+const distVal = document.getElementById('distVal');
+
+function resizeCanvas() {
+  const wrap = document.getElementById('canvas-wrap');
+  canvas.width = wrap.clientWidth;
+  canvas.height = wrap.clientHeight;
+}
+
+function computeCycloid(loopSize, numLoops, numPoints, tracingDist) {
+  const r = loopSize;
+  const d = tracingDist;
+  const points = [];
+  const totalT = 2 * Math.PI * numLoops;
+  for (let i = 0; i <= numPoints; i++) {
+    const t = (i / numPoints) * totalT;
+    const x = r * t - d * Math.sin(t);
+    const y = r - d * Math.cos(t);
+    points.push({ x, y, t });
+  }
+  return points;
+}
+
+function getBounds(points) {
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  for (const p of points) {
+    if (p.x < minX) minX = p.x;
+    if (p.x > maxX) maxX = p.x;
+    if (p.y < minY) minY = p.y;
+    if (p.y > maxY) maxY = p.y;
+  }
+  return { minX, maxX, minY, maxY, width: maxX - minX, height: maxY - minY };
+}
+
+function drawCurve() {
+  const loopSize = parseFloat(sizeSlider.value);
+  const numLoops = parseInt(loopsSlider.value);
+  const numPoints = numLoops * 200;
+  const tracingDist = loopSize * (parseFloat(distSlider.value) / 100);
+  const points = computeCycloid(loopSize, numLoops, numPoints, tracingDist);
+  const bounds = getBounds(points);
+  const padding = 40;
+  const scaleX = (canvas.width - padding * 2) / bounds.width;
+  const scaleY = (canvas.height - padding * 2) / bounds.height;
+  const scale = Math.min(scaleX, scaleY);
+
+  const offsetX = padding + (canvas.width - padding * 2 - bounds.width * scale) / 2 - bounds.minX * scale;
+  const offsetY = padding + (canvas.height - padding * 2 - bounds.height * scale) / 2 - bounds.minY * scale;
+
+  function toScreen(p) {
+    return { x: p.x * scale + offsetX, y: p.y * scale + offsetY };
+  }
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  ctx.beginPath();
+  const first = toScreen(points[0]);
+  ctx.moveTo(first.x, first.y);
+  for (let i = 1; i < points.length; i++) {
+    const p = toScreen(points[i]);
+    ctx.lineTo(p.x, p.y);
+  }
+  ctx.strokeStyle = '#e94560';
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+
+  return { points, toScreen };
+}
+
+let dragIndex = 0;
+let isDragging = false;
+let currentPoints = [];
+let currentToScreen = null;
+
+function findNearestIndex(screenX, screenY, points, toScreen) {
+  let minDist = Infinity;
+  let nearest = 0;
+  for (let i = 0; i < points.length; i++) {
+    const sp = toScreen(points[i]);
+    const dx = sp.x - screenX;
+    const dy = sp.y - screenY;
+    const dist = dx * dx + dy * dy;
+    if (dist < minDist) { minDist = dist; nearest = i; }
+  }
+  return nearest;
+}
+
+function redraw() {
+  sizeVal.textContent = sizeSlider.value;
+  loopsVal.textContent = loopsSlider.value;
+  distVal.textContent = distSlider.value;
+  const loopSize = parseFloat(sizeSlider.value);
+  const numLoops = parseInt(loopsSlider.value);
+  const numPoints = numLoops * 200;
+  const tracingDist = loopSize * (parseFloat(distSlider.value) / 100);
+  currentPoints = computeCycloid(loopSize, numLoops, numPoints, tracingDist);
+  const result = drawCurve();
+  currentToScreen = result.toScreen;
+  drawDragPoint();
+}
+
+function drawDragPoint() {
+  if (!currentToScreen || currentPoints.length === 0) return;
+  const sp = currentToScreen(currentPoints[dragIndex]);
+  ctx.beginPath();
+  ctx.arc(sp.x, sp.y, 7, 0, 2 * Math.PI);
+  ctx.fillStyle = '#fff';
+  ctx.fill();
+  ctx.strokeStyle = '#e94560';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  const pct = Math.round((dragIndex / (currentPoints.length - 1)) * 100);
+  posReadout.textContent = `${pct}% along the curve`;
+}
+
+canvas.addEventListener('mousedown', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  dragIndex = findNearestIndex(mx * scaleX, my * scaleY, currentPoints, currentToScreen);
+  isDragging = true;
+  drawDragPoint();
+});
+
+canvas.addEventListener('mousemove', (e) => {
+  if (!isDragging) return;
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  dragIndex = findNearestIndex(mx * scaleX, my * scaleY, currentPoints, currentToScreen);
+  const result = drawCurve();
+  currentToScreen = result.toScreen;
+  drawDragPoint();
+});
+
+canvas.addEventListener('mouseup', () => { isDragging = false; });
+canvas.addEventListener('mouseleave', () => { isDragging = false; });
+
+canvas.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const touch = e.touches[0];
+  const mx = touch.clientX - rect.left;
+  const my = touch.clientY - rect.top;
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  dragIndex = findNearestIndex(mx * scaleX, my * scaleY, currentPoints, currentToScreen);
+  isDragging = true;
+  drawDragPoint();
+}, { passive: false });
+
+canvas.addEventListener('touchmove', (e) => {
+  e.preventDefault();
+  if (!isDragging) return;
+  const rect = canvas.getBoundingClientRect();
+  const touch = e.touches[0];
+  const mx = touch.clientX - rect.left;
+  const my = touch.clientY - rect.top;
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  dragIndex = findNearestIndex(mx * scaleX, my * scaleY, currentPoints, currentToScreen);
+  const result = drawCurve();
+  currentToScreen = result.toScreen;
+  drawDragPoint();
+}, { passive: false });
+
+canvas.addEventListener('touchend', () => { isDragging = false; });
+
+sizeSlider.addEventListener('input', redraw);
+loopsSlider.addEventListener('input', redraw);
+distSlider.addEventListener('input', redraw);
+
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+redraw();
+</script>
+</body>
+</html>
