@@ -2,12 +2,19 @@
   if (window.location.search.indexOf('preview') !== -1) return;
   var isLanding = document.body.classList.contains('landing-page');
 
+  function rootPath() {
+    var dir = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/'));
+    var depth = dir.split('/').filter(Boolean).length - 1;
+    if (depth <= 0) return './';
+    return new Array(depth + 1).join('../');
+  }
+
   var header = document.createElement('header');
   header.className = 'site-header';
 
   var nameEl = document.createElement( isLanding ? 'span' : 'a' );
   nameEl.className = 'site-name';
-  if (!isLanding) nameEl.href = '../index.html';
+  if (!isLanding) nameEl.href = rootPath() + 'index.html';
   nameEl.textContent = 'AURORA PIAZZA';
   header.appendChild(nameEl);
 
@@ -57,7 +64,7 @@
   } else {
     var homeLink = document.createElement('a');
     homeLink.className = 'home-link';
-    homeLink.href = '../index.html';
+    homeLink.href = rootPath() + 'index.html';
     homeLink.textContent = 'Home';
     navRight.appendChild(homeLink);
   }
