@@ -1,19 +1,15 @@
 (function() {
   if (window.location.search.indexOf('preview') !== -1) return;
-  var isLanding = window.location.pathname.endsWith('/SITO/') ||
-                  window.location.pathname.endsWith('/SITO/index.html') ||
-                  window.location.pathname === '/' ||
-                  window.location.pathname.endsWith('index.html') &&
-                  window.location.pathname.split('/').filter(Boolean).length <= 2;
+  var isLanding = document.body.classList.contains('landing-page');
 
   var header = document.createElement('header');
   header.className = 'site-header';
 
-  var nameLink = document.createElement('a');
-  nameLink.className = 'site-name';
-  nameLink.href = '../index.html';
-  nameLink.textContent = 'AURORA PIAZZA';
-  header.appendChild(nameLink);
+  var nameEl = document.createElement( isLanding ? 'span' : 'a' );
+  nameEl.className = 'site-name';
+  if (!isLanding) nameEl.href = '../index.html';
+  nameEl.textContent = 'AURORA PIAZZA';
+  header.appendChild(nameEl);
 
   var navRight = document.createElement('div');
   navRight.className = 'nav-right';
